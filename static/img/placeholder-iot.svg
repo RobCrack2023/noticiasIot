@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#052e16"/>
+      <stop offset="100%" style="stop-color:#0a1628"/>
+    </linearGradient>
+    <radialGradient id="r" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" style="stop-color:#22c55e18"/>
+      <stop offset="100%" style="stop-color:#22c55e00"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <rect width="800" height="450" fill="url(#r)"/>
+  <!-- Concentric rings -->
+  <circle cx="400" cy="225" r="120" fill="none" stroke="#22c55e10" stroke-width="1"/>
+  <circle cx="400" cy="225" r="90"  fill="none" stroke="#22c55e18" stroke-width="1"/>
+  <circle cx="400" cy="225" r="60"  fill="none" stroke="#22c55e25" stroke-width="1"/>
+  <!-- WiFi / signal arcs -->
+  <path d="M 340 225 A 60 60 0 0 1 460 225"  fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 360 225 A 40 40 0 0 1 440 225"  fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 380 225 A 20 20 0 0 1 420 225"  fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="400" cy="232" r="5" fill="#22c55e"/>
+  <!-- Node dots -->
+  <circle cx="260" cy="160" r="6" fill="#22c55e40"/><line x1="266" y1="163" x2="378" y2="218" stroke="#22c55e20" stroke-width="1"/>
+  <circle cx="540" cy="160" r="6" fill="#22c55e40"/><line x1="534" y1="163" x2="422" y2="218" stroke="#22c55e20" stroke-width="1"/>
+  <circle cx="260" cy="300" r="6" fill="#22c55e40"/><line x1="266" y1="297" x2="378" y2="238" stroke="#22c55e20" stroke-width="1"/>
+  <circle cx="540" cy="300" r="6" fill="#22c55e40"/><line x1="534" y1="297" x2="422" y2="238" stroke="#22c55e20" stroke-width="1"/>
+  <!-- Label -->
+  <text x="400" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#22c55e70" letter-spacing="3">INTERNET OF THINGS</text>
+</svg>

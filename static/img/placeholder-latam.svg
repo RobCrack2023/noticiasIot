@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#431407"/>
+      <stop offset="100%" style="stop-color:#1c0a00"/>
+    </linearGradient>
+    <radialGradient id="r" cx="50%" cy="50%" r="45%">
+      <stop offset="0%" style="stop-color:#f9731620"/>
+      <stop offset="100%" style="stop-color:#f9731600"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <rect width="800" height="450" fill="url(#r)"/>
+  <!-- Globe outline -->
+  <circle cx="400" cy="210" r="100" fill="none" stroke="#f97316" stroke-width="2" opacity="0.5"/>
+  <!-- Latitude lines -->
+  <ellipse cx="400" cy="210" rx="100" ry="30" fill="none" stroke="#f9731630" stroke-width="1"/>
+  <ellipse cx="400" cy="175" rx="85"  ry="20" fill="none" stroke="#f9731620" stroke-width="1"/>
+  <ellipse cx="400" cy="245" rx="85"  ry="20" fill="none" stroke="#f9731620" stroke-width="1"/>
+  <!-- Longitude lines -->
+  <ellipse cx="400" cy="210" rx="35" ry="100" fill="none" stroke="#f9731630" stroke-width="1"/>
+  <ellipse cx="400" cy="210" rx="70" ry="100" fill="none" stroke="#f9731620" stroke-width="1"/>
+  <!-- Location pin -->
+  <path d="M400 165 C385 165 373 177 373 192 C373 212 400 235 400 235 C400 235 427 212 427 192 C427 177 415 165 400 165Z" fill="#f97316" opacity="0.9"/>
+  <circle cx="400" cy="192" r="9" fill="#431407"/>
+  <!-- Signal waves from pin -->
+  <path d="M 380 158 A 25 25 0 0 1 420 158" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 370 148 A 36 36 0 0 1 430 148" fill="none" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <!-- Label -->
+  <text x="400" y="310" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#f9731670" letter-spacing="3">LATINOAMÉRICA</text>
+</svg>

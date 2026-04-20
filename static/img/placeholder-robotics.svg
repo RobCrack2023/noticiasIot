@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e1065"/>
+      <stop offset="100%" style="stop-color:#0f0a1e"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <!-- Background dots grid -->
+  <g fill="#a78bfa10">
+    <circle cx="200" cy="150" r="3"/><circle cx="300" cy="100" r="3"/><circle cx="500" cy="100" r="3"/>
+    <circle cx="600" cy="150" r="3"/><circle cx="600" cy="300" r="3"/><circle cx="500" cy="350" r="3"/>
+    <circle cx="300" cy="350" r="3"/><circle cx="200" cy="300" r="3"/>
+  </g>
+  <!-- Robot head -->
+  <rect x="355" y="148" width="90" height="70" rx="10" fill="none" stroke="#a78bfa" stroke-width="2.5"/>
+  <!-- Eyes -->
+  <rect x="371" y="165" width="18" height="14" rx="4" fill="#a78bfa30" stroke="#a78bfa" stroke-width="1.5"/>
+  <rect x="411" y="165" width="18" height="14" rx="4" fill="#a78bfa30" stroke="#a78bfa" stroke-width="1.5"/>
+  <circle cx="380" cy="172" r="4" fill="#a78bfa"/>
+  <circle cx="420" cy="172" r="4" fill="#a78bfa"/>
+  <!-- Mouth -->
+  <rect x="375" y="191" width="50" height="8" rx="3" fill="#a78bfa20" stroke="#a78bfa60" stroke-width="1"/>
+  <line x1="385" y1="191" x2="385" y2="199" stroke="#a78bfa60" stroke-width="1"/>
+  <line x1="400" y1="191" x2="400" y2="199" stroke="#a78bfa60" stroke-width="1"/>
+  <line x1="415" y1="191" x2="415" y2="199" stroke="#a78bfa60" stroke-width="1"/>
+  <!-- Antenna -->
+  <line x1="400" y1="148" x2="400" y2="130" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="400" cy="125" r="6" fill="none" stroke="#a78bfa" stroke-width="2"/>
+  <circle cx="400" cy="125" r="3" fill="#a78bfa"/>
+  <!-- Body -->
+  <rect x="365" y="222" width="70" height="55" rx="6" fill="none" stroke="#a78bfa80" stroke-width="2"/>
+  <!-- Body details -->
+  <rect x="375" y="232" width="20" height="12" rx="2" fill="#a78bfa20" stroke="#a78bfa40" stroke-width="1"/>
+  <rect x="405" y="232" width="20" height="12" rx="2" fill="#a78bfa20" stroke="#a78bfa40" stroke-width="1"/>
+  <line x1="375" y1="252" x2="425" y2="252" stroke="#a78bfa30" stroke-width="1"/>
+  <circle cx="390" cy="262" r="4" fill="#a78bfa40"/>
+  <circle cx="410" cy="262" r="4" fill="#a78bfa40"/>
+  <!-- Arms -->
+  <line x1="365" y1="235" x2="345" y2="255" stroke="#a78bfa80" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="435" y1="235" x2="455" y2="255" stroke="#a78bfa80" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="343" cy="257" r="7" fill="none" stroke="#a78bfa80" stroke-width="2"/>
+  <circle cx="457" cy="257" r="7" fill="none" stroke="#a78bfa80" stroke-width="2"/>
+  <!-- Label -->
+  <text x="400" y="320" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="600" fill="#a78bfa70" letter-spacing="3">ROBÓTICA</text>
+</svg>
