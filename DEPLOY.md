@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 Verificar que arranca:
 ```bash
-uvicorn main:app --host 127.0.0.1 --port 8000
+uvicorn main:app --host 127.0.0.1 --port 8500
 # Ctrl+C para detener
 ```
 
@@ -72,7 +72,7 @@ After=network.target
 [Service]
 User=techpulse
 WorkingDirectory=/home/techpulse/noticias_iotRobotics
-ExecStart=/home/techpulse/noticias_iotRobotics/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 2
+ExecStart=/home/techpulse/noticias_iotRobotics/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8500 --workers 2
 Restart=always
 RestartSec=5
 
@@ -113,8 +113,8 @@ Contenido:
     ProxyPass /static/ /home/techpulse/noticias_iotRobotics/static/
     ProxyPassReverse /static/ /home/techpulse/noticias_iotRobotics/static/
 
-    ProxyPass / http://127.0.0.1:8000/
-    ProxyPassReverse / http://127.0.0.1:8000/
+    ProxyPass / http://127.0.0.1:8500/
+    ProxyPassReverse / http://127.0.0.1:8500/
 
     RequestHeader set X-Forwarded-Proto "http"
     RequestHeader set X-Real-IP %{REMOTE_ADDR}s
