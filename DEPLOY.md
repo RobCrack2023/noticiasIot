@@ -27,16 +27,10 @@ sudo su - techpulse
 
 ---
 
-## 4. Subir el proyecto
+## 4. Clonar el proyecto desde GitHub
 
-**Opción A — desde tu máquina local (Windows):**
 ```bash
-scp -r C:\proyecto_python\noticias_iotRobotics techpulse@IP_SERVIDOR:/home/techpulse/
-```
-
-**Opción B — desde Git:**
-```bash
-git clone https://github.com/tu-usuario/techpulse.git /home/techpulse/noticias_iotRobotics
+git clone https://github.com/RobCrack2023/noticiasIot.git /home/techpulse/noticias_iotRobotics
 ```
 
 ---
@@ -50,7 +44,7 @@ python3 -m venv venv
 source venv/bin/activate
 
 pip install --upgrade pip
-pip install fastapi uvicorn[standard] feedparser httpx deep-translator beautifulsoup4 jinja2 python-multipart
+pip install -r requirements.txt
 ```
 
 Verificar que arranca:
@@ -183,13 +177,20 @@ Abre `https://tudominio.com` en el navegador — debe cargar con candado verde.
 ## Comandos útiles post-deploy
 
 ```bash
-# Actualizar el código (si usas Git)
+# Actualizar el código desde GitHub
 sudo su - techpulse
 cd noticias_iotRobotics
-git pull
+git pull origin master
+source venv/bin/activate
+pip install -r requirements.txt   # por si hay nuevas dependencias
+exit
+
 sudo systemctl restart techpulse
 
-# Ver logs de errores
+# Ver logs en tiempo real
+sudo journalctl -u techpulse -f
+
+# Ver últimos 100 logs
 sudo journalctl -u techpulse -n 100 --no-pager
 ```
 
