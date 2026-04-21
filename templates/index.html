@@ -67,6 +67,14 @@
           <button id="refresh-btn" onclick="loadNews(true)" class="p-2 rounded-lg text-slate-400 hover:text-sky-500 hover:bg-sky-50 transition-colors" title="Actualizar">
             <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </button>
+          <button id="notify-btn" onclick="toggleNotifications()"
+            class="hidden p-2 rounded-lg transition-colors text-slate-400 hover:text-sky-500 hover:bg-sky-50"
+            title="Activar notificaciones">
+            <svg id="notify-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -635,6 +643,81 @@ function goPage(p){ state.page = p; loadNews(); window.scrollTo({top:0,behavior:
 document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter') searchNews(); });
 
 setInterval(() => { if(state.page===1 && !state.search) loadNews(); }, 5*60*1000);
+
+// ── Push Notifications ─────────────────────────────────────────
+let _swReg = null;
+let _pushSub = null;
+
+function _urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function _setNotifyBtnActive(active) {
+  const btn = document.getElementById('notify-btn');
+  btn.title = active ? 'Desactivar notificaciones' : 'Activar notificaciones';
+  btn.classList.toggle('text-sky-500', active);
+  btn.classList.toggle('bg-sky-50',   active);
+  btn.classList.toggle('text-slate-400', !active);
+  const path = document.querySelector('#notify-icon path');
+  if (active) {
+    path.setAttribute('d', 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9');
+  }
+}
+
+async function initPushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    _swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    _pushSub = await _swReg.pushManager.getSubscription();
+    _setNotifyBtnActive(!!_pushSub);
+    document.getElementById('notify-btn').classList.remove('hidden');
+    document.getElementById('notify-btn').classList.add('flex');
+  } catch(e) {
+    console.warn('Service Worker no disponible:', e);
+  }
+}
+
+async function toggleNotifications() {
+  if (!_swReg) return;
+
+  if (_pushSub) {
+    await _pushSub.unsubscribe();
+    await fetch('/api/push/unsubscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: _pushSub.endpoint }),
+    });
+    _pushSub = null;
+    _setNotifyBtnActive(false);
+    showToast('Notificaciones desactivadas');
+    return;
+  }
+
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { showToast('Permiso de notificaciones denegado'); return; }
+
+  try {
+    const { publicKey } = await fetch('/api/push/vapid-key').then(r => r.json());
+    _pushSub = await _swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(publicKey),
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: _pushSub.toJSON() }),
+    });
+    _setNotifyBtnActive(true);
+    showToast('¡Notificaciones activadas! Te avisaremos con cada nueva noticia.');
+  } catch(e) {
+    console.error('Error al suscribirse a push:', e);
+    showToast('No se pudo activar las notificaciones.');
+  }
+}
+
+initPushNotifications();
 
 loadNews();
 </script>

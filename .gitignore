@@ -5,3 +5,7 @@ venv/
 .env
 visits.json
 .claude/
+error.txt
+DEPLOY.md
+vapid_keys.json
+subscriptions.json

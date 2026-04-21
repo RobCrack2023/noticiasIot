@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import logging
 import time
@@ -11,15 +12,121 @@ import feedparser
 import httpx
 from deep_translator import GoogleTranslator
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pywebpush import webpush, WebPushException
+from cryptography.hazmat.primitives.asymmetric.ec import generate_private_key, SECP256R1
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PublicFormat, PrivateFormat, NoEncryption
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("techpulse")
 
 _translate_cache: dict[str, str] = {}
 _executor = ThreadPoolExecutor(max_workers=4)
+
+# ── Push notifications ─────────────────────────────────────────────────────────
+
+VAPID_KEYS_FILE = Path("vapid_keys.json")
+SUBSCRIPTIONS_FILE = Path("subscriptions.json")
+VAPID_CLAIMS = {"sub": "mailto:admin@techpulse.cl"}
+
+
+def _load_or_generate_vapid() -> tuple[str, str]:
+    if VAPID_KEYS_FILE.exists():
+        try:
+            d = json.loads(VAPID_KEYS_FILE.read_text())
+            return d["private_pem"], d["public_b64"]
+        except Exception:
+            pass
+    private_key = generate_private_key(SECP256R1())
+    private_pem = private_key.private_bytes(
+        Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption()
+    ).decode()
+    raw_pub = private_key.public_key().public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+    public_b64 = base64.urlsafe_b64encode(raw_pub).rstrip(b"=").decode()
+    VAPID_KEYS_FILE.write_text(json.dumps({"private_pem": private_pem, "public_b64": public_b64}))
+    log.info("VAPID keys generated and saved.")
+    return private_pem, public_b64
+
+
+try:
+    VAPID_PRIVATE_PEM, VAPID_PUBLIC_KEY = _load_or_generate_vapid()
+    _push_enabled = True
+except Exception as _e:
+    log.warning("Push notifications disabled: %s", _e)
+    VAPID_PRIVATE_PEM, VAPID_PUBLIC_KEY = "", ""
+    _push_enabled = False
+
+_subscriptions: list[dict] = []
+
+
+def _load_subscriptions():
+    global _subscriptions
+    try:
+        _subscriptions = json.loads(SUBSCRIPTIONS_FILE.read_text())
+    except Exception:
+        _subscriptions = []
+
+
+def _save_subscriptions():
+    try:
+        SUBSCRIPTIONS_FILE.write_text(json.dumps(_subscriptions, indent=2))
+    except Exception as e:
+        log.warning("Could not save subscriptions: %s", e)
+
+
+_load_subscriptions()
+
+
+def _do_send_push(sub: dict, payload: str) -> bool:
+    """Returns False if subscription is expired/invalid (should be removed)."""
+    try:
+        webpush(
+            subscription_info=sub,
+            data=payload,
+            vapid_private_key=VAPID_PRIVATE_PEM,
+            vapid_claims=VAPID_CLAIMS,
+        )
+        return True
+    except WebPushException as exc:
+        if exc.response is not None and exc.response.status_code in (404, 410):
+            return False
+        log.warning("Push send error: %s", exc)
+        return True
+    except Exception as exc:
+        log.warning("Push send error: %s", exc)
+        return True
+
+
+async def _send_push_notifications(articles: list[dict]):
+    global _subscriptions
+    if not articles or not _subscriptions or not _push_enabled:
+        return
+    count = len(articles)
+    payload = json.dumps({
+        "title": f"TechPulse — {count} noticia{'s' if count > 1 else ''} nueva{'s' if count > 1 else ''}",
+        "body": articles[0]["title"][:120],
+        "url": "/",
+    })
+    loop = asyncio.get_event_loop()
+    dead: list[str] = []
+
+    async def _one(sub: dict):
+        ok = await loop.run_in_executor(_executor, lambda: _do_send_push(sub, payload))
+        if not ok:
+            dead.append(sub.get("endpoint", ""))
+
+    await asyncio.gather(*[_one(s) for s in list(_subscriptions)])
+
+    if dead:
+        _subscriptions = [s for s in _subscriptions if s.get("endpoint") not in dead]
+        _save_subscriptions()
+        log.info("Removed %d expired push subscription(s).", len(dead))
+
+# ── End push setup ─────────────────────────────────────────────────────────────
 
 PLACEHOLDERS = {
     "tech":     "/static/img/placeholder-tech.svg",
@@ -30,11 +137,29 @@ PLACEHOLDERS = {
 REFRESH_INTERVAL = 300  # seconds
 
 
+_known_article_links: set[str] = set()
+
+
 async def _prefetch_all():
-    """Warm up the RSS cache for all categories."""
+    """Warm up the RSS cache and notify subscribers about new articles."""
+    global _known_article_links
     log.info("Prefetching all feeds…")
-    await get_all_news(category="all")
-    log.info("Feed cache warm.")
+    articles = await get_all_news(category="all")
+    current_links = {a["link"] for a in articles}
+
+    new_count = 0
+    if _known_article_links:
+        new_links = current_links - _known_article_links
+        new_count = len(new_links)
+        if new_links and _subscriptions:
+            new_articles = sorted(
+                [a for a in articles if a["link"] in new_links],
+                key=lambda x: x["date_ts"], reverse=True,
+            )
+            asyncio.create_task(_send_push_notifications(new_articles))
+
+    _known_article_links = current_links
+    log.info("Feed cache warm. %d total, %d new.", len(current_links), new_count)
 
 
 async def _background_refresh():
@@ -202,9 +327,14 @@ async def get_all_news(category: str = "all", search: str = "") -> list[dict]:
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     global _visit_count
-    _visit_count += 1
-    _save_visits(_visit_count)
-    return templates.TemplateResponse("index.html", {"request": request, "visit_count": _visit_count})
+    is_new = not request.cookies.get("tp_visited")
+    if is_new:
+        _visit_count += 1
+        _save_visits(_visit_count)
+    response = templates.TemplateResponse("index.html", {"request": request, "visit_count": _visit_count})
+    if is_new:
+        response.set_cookie("tp_visited", "1", max_age=60 * 60 * 24 * 365, httponly=True, samesite="lax")
+    return response
 
 
 @app.get("/api/stats")
@@ -235,6 +365,43 @@ async def api_news(
 @app.get("/api/sources")
 async def api_sources():
     return [{"name": s["name"], "category": s["category"]} for s in RSS_SOURCES["all"]]
+
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    content = Path("static/sw.js").read_text()
+    return Response(content=content, media_type="application/javascript",
+                    headers={"Service-Worker-Allowed": "/"})
+
+
+@app.get("/api/push/vapid-key")
+async def api_push_vapid_key():
+    if not _push_enabled:
+        return JSONResponse({"error": "push not available"}, status_code=503)
+    return JSONResponse({"publicKey": VAPID_PUBLIC_KEY})
+
+
+@app.post("/api/push/subscribe")
+async def api_push_subscribe(payload: dict):
+    if not _push_enabled:
+        return JSONResponse({"error": "push not available"}, status_code=503)
+    sub = payload.get("subscription")
+    if not sub or not sub.get("endpoint"):
+        return JSONResponse({"error": "invalid subscription"}, status_code=400)
+    known_endpoints = {s.get("endpoint") for s in _subscriptions}
+    if sub["endpoint"] not in known_endpoints:
+        _subscriptions.append(sub)
+        _save_subscriptions()
+    return JSONResponse({"ok": True, "total": len(_subscriptions)})
+
+
+@app.post("/api/push/unsubscribe")
+async def api_push_unsubscribe(payload: dict):
+    global _subscriptions
+    endpoint = payload.get("endpoint", "")
+    _subscriptions = [s for s in _subscriptions if s.get("endpoint") != endpoint]
+    _save_subscriptions()
+    return JSONResponse({"ok": True})
 
 
 def _do_translate(text: str, limit: int = 500) -> str:
