@@ -21,10 +21,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pywebpush import webpush, WebPushException
-from cryptography.hazmat.primitives.asymmetric.ec import generate_private_key, SECP256R1
-from cryptography.hazmat.primitives.serialization import (
-    Encoding, PublicFormat, PrivateFormat, NoEncryption
-)
+from py_vapid import Vapid as VapidKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("techpulse")
@@ -39,30 +37,34 @@ SUBSCRIPTIONS_FILE = Path("subscriptions.json")
 VAPID_CLAIMS = {"sub": "mailto:admin@techpulse.cl"}
 
 
-def _load_or_generate_vapid() -> tuple[str, str]:
+def _load_or_generate_vapid() -> tuple[VapidKey, str]:
     if VAPID_KEYS_FILE.exists():
         try:
-            d = json.loads(VAPID_KEYS_FILE.read_text())
-            return d["private_pem"], d["public_b64"]
-        except Exception:
-            pass
-    private_key = generate_private_key(SECP256R1())
-    private_pem = private_key.private_bytes(
-        Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption()
-    ).decode()
-    raw_pub = private_key.public_key().public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+            d = json.loads(VAPID_KEYS_FILE.read_text(encoding="utf-8"))
+            v = VapidKey.from_pem(d["private_pem"].encode("utf-8"))
+            return v, d["public_b64"]
+        except Exception as e:
+            log.warning("VAPID key inválida (%s) — regenerando…", e)
+            VAPID_KEYS_FILE.unlink(missing_ok=True)
+    v = VapidKey()
+    v.generate_keys()
+    pem_str = v.private_pem().decode("utf-8")
+    raw_pub = v.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
     public_b64 = base64.urlsafe_b64encode(raw_pub).rstrip(b"=").decode()
-    VAPID_KEYS_FILE.write_text(json.dumps({"private_pem": private_pem, "public_b64": public_b64}))
-    log.info("VAPID keys generated and saved.")
-    return private_pem, public_b64
+    VAPID_KEYS_FILE.write_text(
+        json.dumps({"private_pem": pem_str, "public_b64": public_b64}, indent=2),
+        encoding="utf-8",
+    )
+    log.info("VAPID keys generadas y guardadas.")
+    return v, public_b64
 
 
 try:
-    VAPID_PRIVATE_PEM, VAPID_PUBLIC_KEY = _load_or_generate_vapid()
+    VAPID_OBJECT, VAPID_PUBLIC_KEY = _load_or_generate_vapid()
     _push_enabled = True
 except Exception as _e:
     log.warning("Push notifications disabled: %s", _e)
-    VAPID_PRIVATE_PEM, VAPID_PUBLIC_KEY = "", ""
+    VAPID_OBJECT, VAPID_PUBLIC_KEY = None, ""
     _push_enabled = False
 
 _subscriptions: list[dict] = []
@@ -92,7 +94,7 @@ def _do_send_push(sub: dict, payload: str) -> bool:
         webpush(
             subscription_info=sub,
             data=payload,
-            vapid_private_key=VAPID_PRIVATE_PEM,
+            vapid_private_key=VAPID_OBJECT,
             vapid_claims=VAPID_CLAIMS,
         )
         return True
