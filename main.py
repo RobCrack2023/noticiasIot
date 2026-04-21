@@ -367,6 +367,47 @@ async def api_sources():
     return [{"name": s["name"], "category": s["category"]} for s in RSS_SOURCES["all"]]
 
 
+def _find_article_in_cache(article_url: str) -> dict | None:
+    for feed_data in _cache.values():
+        for article in feed_data.get("data", []):
+            if article.get("link") == article_url:
+                return article
+    return None
+
+
+@app.get("/article", response_class=HTMLResponse)
+async def article_landing(
+    request: Request,
+    url: str = Query(...),
+    t: str = Query(""),
+    s: str = Query(""),
+    c: str = Query("tech"),
+):
+    article = _find_article_in_cache(url)
+    if not article:
+        article = {
+            "title": t or "Artículo",
+            "summary": "",
+            "source": s or "Fuente",
+            "category": c or "tech",
+            "date": "",
+            "image": PLACEHOLDERS.get(c, PLACEHOLDERS["tech"]),
+            "link": url,
+            "lang": "es",
+        }
+    site_base = str(request.base_url).rstrip("/")
+    image = article["image"]
+    if image.startswith("/"):
+        image = site_base + image
+    return templates.TemplateResponse("article.html", {
+        "request": request,
+        "article": article,
+        "landing_url": str(request.url),
+        "og_image": image,
+        "site_base": site_base,
+    })
+
+
 @app.get("/sw.js", include_in_schema=False)
 async def service_worker():
     content = Path("static/sw.js").read_text()

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>{{ article.title | e }} — TechPulse</title>
+  <meta name="description" content="{{ article.summary[:200] | e }}" />
+  <link rel="canonical" href="{{ landing_url }}" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="article" />
+  <meta property="og:site_name"   content="TechPulse — IoT &amp; Robótica" />
+  <meta property="og:title"       content="{{ article.title | e }}" />
+  <meta property="og:description" content="{{ article.summary[:200] | e }}" />
+  <meta property="og:url"         content="{{ landing_url }}" />
+  {% if og_image %}<meta property="og:image" content="{{ og_image }}" />{% endif %}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="{{ article.title | e }}" />
+  <meta name="twitter:description" content="{{ article.summary[:200] | e }}" />
+  {% if og_image %}<meta name="twitter:image" content="{{ og_image }}" />{% endif %}
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { background: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+    .gradient-text { background: linear-gradient(135deg,#0ea5e9,#6366f1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-blur { background: rgba(255,255,255,.88); backdrop-filter: blur(14px); }
+    .badge-tech     { background:#eff6ff; color:#3b82f6; border:1px solid #bfdbfe; }
+    .badge-iot      { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+    .badge-robotics { background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe; }
+    .badge-latam    { background:#fff7ed; color:#ea580c; border:1px solid #fed7aa; }
+    .img-hero { position:relative; height:260px; overflow:hidden; }
+    .img-hero img.bg-blur {
+      position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+      filter:blur(18px) brightness(.55); transform:scale(1.08);
+    }
+    .img-hero img.fg {
+      position:relative; height:100%; width:100%; object-fit:contain; z-index:1;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+  <!-- NAV -->
+  <nav class="sticky top-0 z-50 nav-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{{ site_base }}/" class="flex items-center gap-2.5 group">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center shadow">
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <span class="text-lg font-extrabold gradient-text">TechPulse</span>
+      </a>
+      <a href="{{ site_base }}/"
+         class="text-xs font-semibold text-slate-500 hover:text-sky-600 transition-colors flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"/>
+        </svg>
+        Ver todas las noticias
+      </a>
+    </div>
+  </nav>
+
+  <!-- CARD -->
+  <main class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+
+      <!-- Image hero -->
+      <div class="img-hero">
+        {% set fallbacks = {'tech':'/static/img/placeholder-tech.svg','iot':'/static/img/placeholder-iot.svg','robotics':'/static/img/placeholder-robotics.svg','latam':'/static/img/placeholder-latam.svg'} %}
+        {% set fallback = site_base + (fallbacks[article.category] or fallbacks['tech']) %}
+        <img class="bg-blur" src="{{ article.image }}" alt="" onerror="this.src='{{ fallback }}'" />
+        <img class="fg" src="{{ article.image }}" alt="{{ article.title | e }}" onerror="this.src='{{ fallback }}'" />
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 sm:p-8 flex flex-col gap-4">
+
+        <!-- Meta row -->
+        <div class="flex items-center gap-2 flex-wrap">
+          {% set badge_class = {'tech':'badge-tech','iot':'badge-iot','robotics':'badge-robotics','latam':'badge-latam'} %}
+          {% set badge_label = {'tech':'Tech','iot':'IoT','robotics':'Robótica','latam':'LATAM'} %}
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold {{ badge_class[article.category] or 'badge-tech' }}">
+            {{ badge_label[article.category] or 'Tech' }}
+          </span>
+          <span class="text-xs text-slate-400 font-medium">{{ article.source }}</span>
+          {% if article.date %}
+          <span class="text-xs text-slate-300">·</span>
+          <span class="text-xs text-slate-400">{{ article.date }}</span>
+          {% endif %}
+          {% if article.lang == 'es' %}
+          <span class="ml-auto text-xs px-1.5 py-0.5 rounded bg-orange-50 text-orange-500 border border-orange-100 font-semibold">🌎 ES</span>
+          {% endif %}
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
+          {{ article.title }}
+        </h1>
+
+        <!-- Summary -->
+        {% if article.summary %}
+        <p class="text-slate-600 text-sm leading-relaxed border-l-4 border-sky-200 pl-4">
+          {{ article.summary }}
+        </p>
+        {% endif %}
+
+        <!-- CTAs -->
+        <div class="flex flex-col sm:flex-row gap-3 mt-2">
+          <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer"
+             class="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-semibold text-sm shadow-md shadow-sky-200 transition-all hover:scale-[1.02] active:scale-[.98]">
+            Leer artículo completo
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+          </a>
+          <a href="{{ site_base }}/"
+             class="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 font-semibold text-sm hover:border-sky-400 hover:text-sky-600 hover:bg-sky-50 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Más noticias en TechPulse
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Branding note -->
+    <p class="text-center text-xs text-slate-400 mt-6">
+      Compartido desde
+      <a href="{{ site_base }}/" class="text-sky-500 hover:underline font-medium">TechPulse</a>
+      — Agregador de noticias IoT &amp; Robótica
+    </p>
+  </main>
+
+</body>
+</html>

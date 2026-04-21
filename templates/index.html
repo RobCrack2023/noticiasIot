@@ -425,7 +425,7 @@ async function openModal(idx){
   document.getElementById('modal-date').textContent  = a.date;
   document.getElementById('modal-source').textContent = a.source;
   document.getElementById('modal-link').href = a.link;
-  _setupShare(a.link, a._title_es || a.title);
+  _setupShare(a);
 
   const badge = document.getElementById('modal-badge');
   badge.textContent = BADGE_LABEL[a.category] || 'Tech';
@@ -509,10 +509,16 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal();
 let _currentShareUrl   = '';
 let _currentShareTitle = '';
 
-function _setupShare(url, title){
-  _currentShareUrl   = url;
+function _setupShare(article){
+  const title = article._title_es || article.title;
+  const params = new URLSearchParams({
+    url: article.link,
+    t:   title,
+    s:   article.source   || '',
+    c:   article.category || 'tech',
+  });
+  _currentShareUrl   = `${location.origin}/article?${params}`;
   _currentShareTitle = title;
-  // Show native share button only if API is available
   const nativeBtn = document.getElementById('native-share-btn');
   if(navigator.share){
     nativeBtn.classList.remove('hidden');
