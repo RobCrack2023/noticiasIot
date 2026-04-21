@@ -2,6 +2,8 @@ import asyncio
 import base64
 import json
 import logging
+import os
+import secrets
 import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
@@ -12,8 +14,8 @@ from typing import Optional
 import feedparser
 import httpx
 from deep_translator import GoogleTranslator
-from fastapi import FastAPI, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi import FastAPI, Form, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pywebpush import webpush, WebPushException
@@ -191,32 +193,42 @@ app = FastAPI(title="TechPulse - Noticias IoT & Robótica", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-RSS_SOURCES = {
-    "all": [
-        # ── Internacional (inglés) ──────────────────────────────
-        {"name": "Hackaday",          "url": "https://hackaday.com/blog/feed/",                        "category": "iot",      "lang": "en"},
-        {"name": "IEEE Spectrum",     "url": "https://spectrum.ieee.org/feeds/feed.rss",                "category": "robotics", "lang": "en"},
-        {"name": "TechCrunch",        "url": "https://techcrunch.com/feed/",                            "category": "tech",     "lang": "en"},
-        {"name": "Wired",             "url": "https://www.wired.com/feed/rss",                          "category": "tech",     "lang": "en"},
-        {"name": "Ars Technica",      "url": "https://feeds.arstechnica.com/arstechnica/index",         "category": "tech",     "lang": "en"},
-        {"name": "The Verge",         "url": "https://www.theverge.com/rss/index.xml",                  "category": "tech",     "lang": "en"},
-        {"name": "MIT Tech Review",   "url": "https://www.technologyreview.com/stories.rss",            "category": "tech",     "lang": "en"},
-        {"name": "RoboHub",           "url": "https://robohub.org/feed/",                               "category": "robotics", "lang": "en"},
-        {"name": "Electronics Weekly","url": "https://www.electronicsweekly.com/feed/",                  "category": "iot",      "lang": "en"},
-        {"name": "Tom's Hardware",    "url": "https://www.tomshardware.com/feeds/all",                  "category": "tech",     "lang": "en"},
-        # ── Latinoamérica (español) ────────────────────────────
-        {"name": "Xataka México",     "url": "https://feeds.weblogssl.com/xatakamx",                   "category": "latam",    "lang": "es"},
-        {"name": "Fayerwayer",        "url": "https://www.fayerwayer.com/feed/",                        "category": "latam",    "lang": "es"},
-        {"name": "Enter.co",          "url": "https://www.enter.co/feed/",                              "category": "latam",    "lang": "es"},
-        {"name": "Hipertextual",      "url": "https://hipertextual.com/feed",                           "category": "latam",    "lang": "es"},
-        {"name": "IoT LATAM",         "url": "https://iotlatam.com/feed/",                              "category": "latam",    "lang": "es"},
-        {"name": "Digital Trends ES", "url": "https://es.digitaltrends.com/feed/",                      "category": "latam",    "lang": "es"},
-        {"name": "Infobae Tecno",     "url": "https://www.infobae.com/feeds/rss/tecnologia/",           "category": "latam",    "lang": "es"},
-        {"name": "La Nación Tech",    "url": "https://www.lanacion.com.ar/tecnologia/feed/",            "category": "latam",    "lang": "es"},
-        {"name": "Xataka",            "url": "https://feeds.weblogssl.com/xataka",                      "category": "latam",    "lang": "es"},
-        {"name": "Genbeta",           "url": "https://feeds.weblogssl.com/genbeta",                     "category": "latam",    "lang": "es"},
-    ]
-}
+SOURCES_FILE = Path("sources.json")
+
+def _load_sources() -> list[dict]:
+    try:
+        return json.loads(SOURCES_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+def _save_sources(sources: list[dict]):
+    SOURCES_FILE.write_text(json.dumps(sources, indent=2, ensure_ascii=False), encoding="utf-8")
+
+RSS_SOURCES: dict[str, list[dict]] = {"all": _load_sources()}
+
+# ── Admin auth ─────────────────────────────────────────────────────────────────
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+if not ADMIN_PASSWORD:
+    ADMIN_PASSWORD = secrets.token_urlsafe(12)
+    log.warning("ADMIN_PASSWORD no configurado. Usando: %s  (define la variable de entorno para fijarlo)", ADMIN_PASSWORD)
+
+_admin_session: str | None = None
+
+def _new_admin_session() -> str:
+    global _admin_session
+    _admin_session = secrets.token_urlsafe(32)
+    return _admin_session
+
+def _is_admin(request: Request) -> bool:
+    token = request.cookies.get("admin_session", "")
+    return bool(_admin_session and secrets.compare_digest(_admin_session, token))
+
+def _require_admin_api(request: Request):
+    if not _is_admin(request):
+        raise __import__("fastapi").HTTPException(status_code=401, detail="No autorizado")
+
+# ── End admin auth ─────────────────────────────────────────────────────────────
 
 _cache: dict = {}
 CACHE_TTL = 300  # 5 minutes
@@ -517,3 +529,134 @@ async def api_article_summary(url: str):
     translated = await loop.run_in_executor(_executor, lambda: _do_translate(raw_text, limit=2000))
     _translate_cache[cache_key] = translated
     return JSONResponse({"summary": translated})
+
+
+# ── Admin routes ───────────────────────────────────────────────────────────────
+
+@app.get("/admin/login", response_class=HTMLResponse)
+async def admin_login_page(request: Request):
+    if _is_admin(request):
+        return RedirectResponse("/admin")
+    return templates.TemplateResponse("admin_login.html", {"request": request, "error": False})
+
+@app.post("/admin/login")
+async def admin_login(request: Request, password: str = Form(...)):
+    if secrets.compare_digest(password, ADMIN_PASSWORD):
+        token = _new_admin_session()
+        resp = RedirectResponse("/admin", status_code=302)
+        resp.set_cookie("admin_session", token, httponly=True, samesite="strict", max_age=86400)
+        return resp
+    return templates.TemplateResponse("admin_login.html", {"request": request, "error": True}, status_code=401)
+
+@app.get("/admin/logout")
+async def admin_logout():
+    global _admin_session
+    _admin_session = None
+    resp = RedirectResponse("/admin/login", status_code=302)
+    resp.delete_cookie("admin_session")
+    return resp
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_panel(request: Request):
+    if not _is_admin(request):
+        return RedirectResponse("/admin/login")
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+# ── Admin API ──────────────────────────────────────────────────────────────────
+
+@app.get("/admin/api/stats")
+async def admin_stats(request: Request):
+    _require_admin_api(request)
+    cached_articles = sum(len(v.get("data", [])) for v in _cache.values())
+    return JSONResponse({
+        "visits":          _visit_count,
+        "sources":         len(RSS_SOURCES["all"]),
+        "cached_articles": cached_articles,
+        "push_subscribers": len(_subscriptions),
+        "push_enabled":    _push_enabled,
+    })
+
+@app.get("/admin/api/sources")
+async def admin_get_sources(request: Request):
+    _require_admin_api(request)
+    return JSONResponse(RSS_SOURCES["all"])
+
+@app.post("/admin/api/sources")
+async def admin_add_source(request: Request, payload: dict):
+    _require_admin_api(request)
+    name     = (payload.get("name") or "").strip()
+    url      = (payload.get("url") or "").strip()
+    category = payload.get("category", "tech")
+    lang     = payload.get("lang", "en")
+    if not name or not url:
+        return JSONResponse({"error": "name y url son requeridos"}, status_code=400)
+    if category not in ("tech", "iot", "robotics", "latam"):
+        return JSONResponse({"error": "categoría inválida"}, status_code=400)
+    if any(s["url"] == url for s in RSS_SOURCES["all"]):
+        return JSONResponse({"error": "La URL ya existe"}, status_code=409)
+    new_source = {"name": name, "url": url, "category": category, "lang": lang}
+    RSS_SOURCES["all"].append(new_source)
+    _save_sources(RSS_SOURCES["all"])
+    return JSONResponse({"ok": True, "source": new_source})
+
+@app.delete("/admin/api/sources")
+async def admin_delete_source(request: Request, payload: dict):
+    _require_admin_api(request)
+    url = payload.get("url", "")
+    before = len(RSS_SOURCES["all"])
+    RSS_SOURCES["all"] = [s for s in RSS_SOURCES["all"] if s["url"] != url]
+    if len(RSS_SOURCES["all"]) == before:
+        return JSONResponse({"error": "Fuente no encontrada"}, status_code=404)
+    _cache.pop(url, None)
+    _save_sources(RSS_SOURCES["all"])
+    return JSONResponse({"ok": True})
+
+@app.post("/admin/api/sources/test")
+async def admin_test_source(request: Request, payload: dict):
+    _require_admin_api(request)
+    url = (payload.get("url") or "").strip()
+    if not url:
+        return JSONResponse({"ok": False, "error": "URL vacía"})
+    try:
+        async with httpx.AsyncClient(
+            headers={"User-Agent": "TechPulse-AdminBot/1.0"},
+            follow_redirects=True, timeout=10
+        ) as client:
+            resp = await client.get(url)
+        feed = feedparser.parse(resp.text)
+        if not feed.entries:
+            return JSONResponse({"ok": False, "error": "Feed válido pero sin artículos"})
+        return JSONResponse({
+            "ok":       True,
+            "title":    feed.feed.get("title", "Sin título"),
+            "articles": len(feed.entries),
+        })
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)})
+
+@app.post("/admin/api/refresh")
+async def admin_force_refresh(request: Request):
+    _require_admin_api(request)
+    _cache.clear()
+    asyncio.create_task(_prefetch_all())
+    return JSONResponse({"ok": True})
+
+@app.post("/admin/api/visits/reset")
+async def admin_reset_visits(request: Request):
+    _require_admin_api(request)
+    global _visit_count
+    _visit_count = 0
+    _save_visits(0)
+    return JSONResponse({"ok": True})
+
+@app.post("/admin/api/notify/test")
+async def admin_notify_test(request: Request, payload: dict):
+    _require_admin_api(request)
+    if not _push_enabled or not _subscriptions:
+        return JSONResponse({"ok": False, "error": "Sin suscriptores o push desactivado"})
+    test_article = {
+        "title": payload.get("title", "Notificación de prueba — TechPulse"),
+        "date_ts": time.time(),
+    }
+    asyncio.create_task(_send_push_notifications([test_article]))
+    return JSONResponse({"ok": True, "sent_to": len(_subscriptions)})

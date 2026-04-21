@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — TechPulse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background:#0f172a; }
+    .sidebar-link { transition: background .15s, color .15s; }
+    .sidebar-link.active { background:#1e3a5f; color:#38bdf8; }
+    .sidebar-link:hover:not(.active) { background:#1e293b; color:#cbd5e1; }
+    .section { display:none; }
+    .section.active { display:block; }
+    .badge-tech     { background:#1d4ed820; color:#60a5fa; border:1px solid #1d4ed840; }
+    .badge-iot      { background:#15803d20; color:#4ade80; border:1px solid #15803d40; }
+    .badge-robotics { background:#7e22ce20; color:#c084fc; border:1px solid #7e22ce40; }
+    .badge-latam    { background:#c2410c20; color:#fb923c; border:1px solid #c2410c40; }
+    .card { background:#1e293b; border:1px solid #334155; border-radius:1rem; }
+    input,select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; border-radius:.75rem; padding:.6rem 1rem; font-size:.875rem; width:100%; outline:none; transition:border .15s; }
+    input:focus,select:focus { border-color:#38bdf8; }
+    input::placeholder { color:#475569; }
+    table { width:100%; border-collapse:collapse; }
+    th { text-align:left; padding:.6rem 1rem; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; border-bottom:1px solid #1e293b; }
+    td { padding:.75rem 1rem; font-size:.8rem; color:#cbd5e1; border-bottom:1px solid #1e293b; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#1e293b44; }
+    .btn-primary { background:linear-gradient(135deg,#0ea5e9,#6366f1); color:#fff; font-weight:600; border-radius:.75rem; padding:.55rem 1.25rem; font-size:.8rem; cursor:pointer; transition:opacity .15s,transform .1s; border:none; }
+    .btn-primary:hover { opacity:.88; transform:scale(1.02); }
+    .btn-primary:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+    .btn-danger  { background:#7f1d1d40; color:#f87171; border:1px solid #7f1d1d60; font-weight:600; border-radius:.75rem; padding:.45rem .9rem; font-size:.75rem; cursor:pointer; transition:background .15s; }
+    .btn-danger:hover { background:#7f1d1d70; }
+    .btn-ghost  { background:#1e293b; color:#94a3b8; border:1px solid #334155; font-weight:600; border-radius:.75rem; padding:.45rem .9rem; font-size:.75rem; cursor:pointer; transition:background .15s; }
+    .btn-ghost:hover { background:#334155; }
+    .toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:100; background:#0ea5e9; color:#fff; border-radius:.875rem; padding:.7rem 1.2rem; font-size:.8rem; font-weight:600; box-shadow:0 8px 24px #0ea5e940; opacity:0; transform:translateY(8px); transition:all .3s; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateY(0); }
+    .toast.err { background:#ef4444; box-shadow:0 8px 24px #ef444440; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen flex">
+
+<!-- SIDEBAR -->
+<aside class="w-56 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col min-h-screen fixed top-0 left-0 z-40 hidden lg:flex">
+  <div class="px-5 py-5 border-b border-slate-800">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-white leading-tight">TechPulse</p>
+        <p class="text-xs text-slate-500">Admin</p>
+      </div>
+    </div>
+  </div>
+  <nav class="flex-1 px-3 py-4 space-y-1">
+    <button onclick="setTab('dashboard')" data-tab="dashboard" class="sidebar-link active w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      Dashboard
+    </button>
+    <button onclick="setTab('sources')" data-tab="sources" class="sidebar-link w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7M6 17a1 1 0 110-2 1 1 0 010 2z"/></svg>
+      Fuentes RSS
+    </button>
+    <button onclick="setTab('push')" data-tab="push" class="sidebar-link w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Notificaciones
+    </button>
+    <button onclick="setTab('system')" data-tab="system" class="sidebar-link w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+      Sistema
+    </button>
+  </nav>
+  <div class="px-3 pb-5">
+    <a href="/admin/logout" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:text-red-400 hover:bg-red-950/30 transition-colors w-full">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Cerrar sesión
+    </a>
+    <a href="/" target="_blank" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-400 transition-colors mt-1 w-full">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+      Ver sitio
+    </a>
+  </div>
+</aside>
+
+<!-- TOPBAR (mobile) -->
+<div class="lg:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-2">
+    <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center">
+      <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <span class="text-sm font-bold text-white">TechPulse Admin</span>
+  </div>
+  <a href="/admin/logout" class="text-xs text-red-400 hover:text-red-300">Salir</a>
+</div>
+<div class="lg:hidden fixed top-12 left-0 right-0 z-30 bg-slate-900 border-b border-slate-800 flex overflow-x-auto">
+  <button onclick="setTab('dashboard')" data-tab="dashboard" class="tab-mobile active shrink-0 px-4 py-2.5 text-xs font-semibold text-sky-400 border-b-2 border-sky-400">Dashboard</button>
+  <button onclick="setTab('sources')"   data-tab="sources"   class="tab-mobile shrink-0 px-4 py-2.5 text-xs font-semibold text-slate-400 border-b-2 border-transparent">Fuentes</button>
+  <button onclick="setTab('push')"      data-tab="push"      class="tab-mobile shrink-0 px-4 py-2.5 text-xs font-semibold text-slate-400 border-b-2 border-transparent">Notificaciones</button>
+  <button onclick="setTab('system')"    data-tab="system"    class="tab-mobile shrink-0 px-4 py-2.5 text-xs font-semibold text-slate-400 border-b-2 border-transparent">Sistema</button>
+</div>
+
+<!-- MAIN -->
+<main class="flex-1 lg:ml-56 pt-24 lg:pt-0 min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- PAGE HEADER -->
+    <div id="page-title" class="mb-8">
+      <h1 class="text-2xl font-extrabold text-white">Dashboard</h1>
+      <p class="text-slate-500 text-sm mt-1">Resumen general del sistema</p>
+    </div>
+
+    <!-- ── DASHBOARD ──────────────────────────────────── -->
+    <div id="sec-dashboard" class="section active space-y-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="stats-grid">
+        <div class="card p-5"><p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Visitas</p><p class="text-3xl font-extrabold text-white" id="s-visits">—</p></div>
+        <div class="card p-5"><p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Fuentes</p><p class="text-3xl font-extrabold text-white" id="s-sources">—</p></div>
+        <div class="card p-5"><p class="text-xs text-slate-500 uppercase tracking-widest mb-2">En caché</p><p class="text-3xl font-extrabold text-white" id="s-cached">—</p></div>
+        <div class="card p-5"><p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Suscriptores</p><p class="text-3xl font-extrabold text-white" id="s-subs">—</p></div>
+      </div>
+      <div class="card p-6">
+        <h2 class="text-sm font-bold text-slate-300 mb-4">Acciones rápidas</h2>
+        <div class="flex flex-wrap gap-3">
+          <button class="btn-primary" onclick="forceRefresh()">
+            <svg class="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Actualizar caché
+          </button>
+          <button class="btn-ghost" onclick="setTab('sources')">Administrar fuentes →</button>
+          <button class="btn-ghost" onclick="setTab('push')">Enviar notificación →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FUENTES RSS ─────────────────────────────────── -->
+    <div id="sec-sources" class="section space-y-6">
+
+      <!-- Add form -->
+      <div class="card p-6">
+        <h2 class="text-sm font-bold text-slate-300 mb-5">Agregar fuente</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">Nombre</label>
+            <input id="f-name" type="text" placeholder="Ej: Hackster.io" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">URL del feed RSS</label>
+            <div class="flex gap-2">
+              <input id="f-url" type="url" placeholder="https://ejemplo.com/feed/" style="flex:1" />
+              <button class="btn-ghost shrink-0" onclick="testFeed()" id="btn-test">Verificar</button>
+            </div>
+            <p id="test-result" class="text-xs mt-1.5 hidden"></p>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">Categoría</label>
+            <select id="f-cat">
+              <option value="tech">Tecnología</option>
+              <option value="iot">IoT</option>
+              <option value="robotics">Robótica</option>
+              <option value="latam">LATAM</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">Idioma</label>
+            <select id="f-lang">
+              <option value="en">Inglés</option>
+              <option value="es">Español</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="addSource()" id="btn-add">Agregar fuente</button>
+      </div>
+
+      <!-- Sources table -->
+      <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-slate-300">Fuentes activas</h2>
+          <span id="sources-count" class="text-xs text-slate-500"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>URL</th>
+                <th>Categoría</th>
+                <th>Idioma</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="sources-tbody">
+              <tr><td colspan="5" class="text-center text-slate-600 py-8">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NOTIFICACIONES ─────────────────────────────── -->
+    <div id="sec-push" class="section space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="card p-5">
+          <p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Suscriptores activos</p>
+          <p class="text-3xl font-extrabold text-white" id="p-subs">—</p>
+        </div>
+        <div class="card p-5">
+          <p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Push habilitado</p>
+          <p class="text-lg font-bold mt-1" id="p-enabled">—</p>
+        </div>
+      </div>
+      <div class="card p-6">
+        <h2 class="text-sm font-bold text-slate-300 mb-5">Enviar notificación de prueba</h2>
+        <div class="mb-4">
+          <label class="block text-xs text-slate-500 mb-1.5">Título del mensaje</label>
+          <input id="n-title" type="text" value="TechPulse — Mensaje de prueba" />
+        </div>
+        <button class="btn-primary" onclick="sendTestNotif()">
+          <svg class="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Enviar a todos los suscriptores
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SISTEMA ─────────────────────────────────────── -->
+    <div id="sec-system" class="section space-y-4">
+      <div class="card p-6">
+        <h2 class="text-sm font-bold text-slate-300 mb-2">Actualizar caché</h2>
+        <p class="text-xs text-slate-500 mb-4">Descarta el caché actual y recarga todos los feeds RSS inmediatamente.</p>
+        <button class="btn-primary" onclick="forceRefresh()">Forzar actualización</button>
+      </div>
+      <div class="card p-6">
+        <h2 class="text-sm font-bold text-slate-300 mb-2">Contador de visitas</h2>
+        <p class="text-xs text-slate-500 mb-1">Visitas actuales: <span id="sys-visits" class="text-white font-semibold">—</span></p>
+        <p class="text-xs text-slate-600 mb-4">Reinicia el contador a cero. No afecta las cookies de los usuarios.</p>
+        <button class="btn-danger" onclick="resetVisits()">Reiniciar contador</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script>
+const TABS = { dashboard:'Dashboard', sources:'Fuentes RSS', push:'Notificaciones', system:'Sistema' };
+const SUBTITLES = { dashboard:'Resumen general del sistema', sources:'Gestiona las fuentes de noticias RSS', push:'Suscriptores y notificaciones push', system:'Mantenimiento del servidor' };
+
+function setTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+
+  document.querySelectorAll('[data-tab]').forEach(b => {
+    const isActive = b.dataset.tab === name;
+    b.classList.toggle('active', isActive);
+    if (b.classList.contains('tab-mobile')) {
+      b.classList.toggle('text-sky-400', isActive);
+      b.classList.toggle('border-sky-400', isActive);
+      b.classList.toggle('text-slate-400', !isActive);
+      b.classList.toggle('border-transparent', !isActive);
+    }
+  });
+
+  document.querySelector('#page-title h1').textContent = TABS[name];
+  document.querySelector('#page-title p').textContent = SUBTITLES[name];
+
+  if (name === 'sources') loadSources();
+  if (name === 'push' || name === 'dashboard') loadStats();
+  if (name === 'system') loadStats();
+}
+
+function toast(msg, err=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (err ? ' err' : '');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function api(method, path, body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+// ── Stats ──────────────────────────────────────────────
+async function loadStats() {
+  const d = await api('GET', '/admin/api/stats');
+  document.getElementById('s-visits').textContent  = d.visits?.toLocaleString() ?? '—';
+  document.getElementById('s-sources').textContent = d.sources ?? '—';
+  document.getElementById('s-cached').textContent  = d.cached_articles ?? '—';
+  document.getElementById('s-subs').textContent    = d.push_subscribers ?? '—';
+  const pSubs = document.getElementById('p-subs');
+  if (pSubs) pSubs.textContent = d.push_subscribers ?? '—';
+  const pEn = document.getElementById('p-enabled');
+  if (pEn) {
+    pEn.textContent   = d.push_enabled ? 'Activo' : 'Inactivo';
+    pEn.className     = 'text-lg font-bold mt-1 ' + (d.push_enabled ? 'text-emerald-400' : 'text-red-400');
+  }
+  const sv = document.getElementById('sys-visits');
+  if (sv) sv.textContent = d.visits?.toLocaleString() ?? '—';
+}
+
+// ── Sources ────────────────────────────────────────────
+const CAT_LABEL = { tech:'Tech', iot:'IoT', robotics:'Robótica', latam:'LATAM' };
+const LANG_LABEL = { en:'EN', es:'ES' };
+
+async function loadSources() {
+  const sources = await api('GET', '/admin/api/sources');
+  const tbody = document.getElementById('sources-tbody');
+  document.getElementById('sources-count').textContent = sources.length + ' fuente' + (sources.length!==1?'s':'');
+  if (!sources.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-600 py-8">Sin fuentes</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sources.map(s => `
+    <tr>
+      <td class="font-medium text-slate-200">${s.name}</td>
+      <td><a href="${s.url}" target="_blank" class="text-sky-500 hover:underline text-xs truncate max-w-xs block">${s.url}</a></td>
+      <td><span class="text-xs px-2 py-0.5 rounded-full font-semibold badge-${s.category}">${CAT_LABEL[s.category]||s.category}</span></td>
+      <td><span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold">${LANG_LABEL[s.lang]||s.lang}</span></td>
+      <td><button class="btn-danger" onclick="deleteSource('${encodeURIComponent(s.url)}','${s.name.replace(/'/g,"\\'")}')">Eliminar</button></td>
+    </tr>`).join('');
+}
+
+async function testFeed() {
+  const url = document.getElementById('f-url').value.trim();
+  if (!url) { toast('Ingresa una URL primero', true); return; }
+  const btn = document.getElementById('btn-test');
+  const res = document.getElementById('test-result');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  res.className = 'text-xs mt-1.5';
+  const d = await api('POST', '/admin/api/sources/test', { url });
+  btn.disabled = false; btn.textContent = 'Verificar';
+  res.classList.remove('hidden');
+  if (d.ok) {
+    res.className += ' text-emerald-400';
+    res.textContent = `Feed válido — "${d.title}" (${d.articles} artículos)`;
+  } else {
+    res.className += ' text-red-400';
+    res.textContent = d.error || 'Feed inválido';
+  }
+}
+
+async function addSource() {
+  const name = document.getElementById('f-name').value.trim();
+  const url  = document.getElementById('f-url').value.trim();
+  const cat  = document.getElementById('f-cat').value;
+  const lang = document.getElementById('f-lang').value;
+  if (!name || !url) { toast('Nombre y URL son obligatorios', true); return; }
+  const btn = document.getElementById('btn-add');
+  btn.disabled = true; btn.textContent = 'Agregando…';
+  const d = await api('POST', '/admin/api/sources', { name, url, category: cat, lang });
+  btn.disabled = false; btn.textContent = 'Agregar fuente';
+  if (d.ok) {
+    toast('Fuente agregada correctamente');
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-url').value  = '';
+    document.getElementById('test-result').classList.add('hidden');
+    loadSources();
+    loadStats();
+  } else {
+    toast(d.error || 'Error al agregar', true);
+  }
+}
+
+async function deleteSource(encodedUrl, name) {
+  if (!confirm('¿Eliminar "' + name + '"?')) return;
+  const url = decodeURIComponent(encodedUrl);
+  const d = await api('DELETE', '/admin/api/sources', { url });
+  if (d.ok) { toast('Fuente eliminada'); loadSources(); loadStats(); }
+  else toast(d.error || 'Error', true);
+}
+
+// ── System ─────────────────────────────────────────────
+async function forceRefresh() {
+  const d = await api('POST', '/admin/api/refresh');
+  if (d.ok) { toast('Actualización en curso…'); setTimeout(loadStats, 3000); }
+}
+
+async function resetVisits() {
+  if (!confirm('¿Reiniciar el contador de visitas a 0?')) return;
+  const d = await api('POST', '/admin/api/visits/reset');
+  if (d.ok) { toast('Contador reiniciado'); loadStats(); }
+}
+
+// ── Push ───────────────────────────────────────────────
+async function sendTestNotif() {
+  const title = document.getElementById('n-title').value.trim();
+  const d = await api('POST', '/admin/api/notify/test', { title });
+  if (d.ok) toast('Notificación enviada a ' + d.sent_to + ' suscriptor(es)');
+  else toast(d.error || 'Error', true);
+}
+
+// ── Init ───────────────────────────────────────────────
+loadStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {"name": "Hackaday",          "url": "https://hackaday.com/blog/feed/",                      "category": "iot",      "lang": "en"},
+  {"name": "IEEE Spectrum",     "url": "https://spectrum.ieee.org/feeds/feed.rss",              "category": "robotics", "lang": "en"},
+  {"name": "TechCrunch",        "url": "https://techcrunch.com/feed/",                          "category": "tech",     "lang": "en"},
+  {"name": "Wired",             "url": "https://www.wired.com/feed/rss",                        "category": "tech",     "lang": "en"},
+  {"name": "Ars Technica",      "url": "https://feeds.arstechnica.com/arstechnica/index",       "category": "tech",     "lang": "en"},
+  {"name": "The Verge",         "url": "https://www.theverge.com/rss/index.xml",                "category": "tech",     "lang": "en"},
+  {"name": "MIT Tech Review",   "url": "https://www.technologyreview.com/stories.rss",          "category": "tech",     "lang": "en"},
+  {"name": "RoboHub",           "url": "https://robohub.org/feed/",                             "category": "robotics", "lang": "en"},
+  {"name": "Electronics Weekly","url": "https://www.electronicsweekly.com/feed/",               "category": "iot",      "lang": "en"},
+  {"name": "Tom's Hardware",    "url": "https://www.tomshardware.com/feeds/all",                "category": "tech",     "lang": "en"},
+  {"name": "Xataka México",     "url": "https://feeds.weblogssl.com/xatakamx",                 "category": "latam",    "lang": "es"},
+  {"name": "Fayerwayer",        "url": "https://www.fayerwayer.com/feed/",                      "category": "latam",    "lang": "es"},
+  {"name": "Enter.co",          "url": "https://www.enter.co/feed/",                            "category": "latam",    "lang": "es"},
+  {"name": "Hipertextual",      "url": "https://hipertextual.com/feed",                         "category": "latam",    "lang": "es"},
+  {"name": "IoT LATAM",         "url": "https://iotlatam.com/feed/",                            "category": "latam",    "lang": "es"},
+  {"name": "Digital Trends ES", "url": "https://es.digitaltrends.com/feed/",                    "category": "latam",    "lang": "es"},
+  {"name": "Infobae Tecno",     "url": "https://www.infobae.com/feeds/rss/tecnologia/",         "category": "latam",    "lang": "es"},
+  {"name": "La Nación Tech",    "url": "https://www.lanacion.com.ar/tecnologia/feed/",          "category": "latam",    "lang": "es"},
+  {"name": "Xataka",            "url": "https://feeds.weblogssl.com/xataka",                    "category": "latam",    "lang": "es"},
+  {"name": "Genbeta",           "url": "https://feeds.weblogssl.com/genbeta",                   "category": "latam",    "lang": "es"}
+]
