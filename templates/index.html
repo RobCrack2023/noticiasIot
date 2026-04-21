@@ -646,7 +646,14 @@ function searchNews(){
 
 function goPage(p){ state.page = p; loadNews(); window.scrollTo({top:0,behavior:'smooth'}); }
 
-document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter') searchNews(); });
+let _searchDebounce = null;
+document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Enter'){ clearTimeout(_searchDebounce); searchNews(); } });
+document.getElementById('search-input').addEventListener('input', e => {
+  clearTimeout(_searchDebounce);
+  const val = e.target.value.trim();
+  if(val === '' && state.search !== ''){ state.search=''; state.page=1; loadNews(); return; }
+  if(val.length >= 2) _searchDebounce = setTimeout(searchNews, 420);
+});
 
 setInterval(() => { if(state.page===1 && !state.search) loadNews(); }, 5*60*1000);
 

@@ -3,6 +3,7 @@ import base64
 import json
 import logging
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -302,6 +303,19 @@ async def fetch_feed(source: dict, client: httpx.AsyncClient) -> list[dict]:
         return []
 
 
+def _normalize(text: str) -> str:
+    """Lowercase + strip diacritics so 'robotica' matches 'robótica'."""
+    return unicodedata.normalize("NFD", text.lower()).encode("ascii", "ignore").decode()
+
+
+def _matches_search(article: dict, query: str) -> bool:
+    """All whitespace-separated terms must appear somewhere in title/summary/source."""
+    haystack = _normalize(
+        f"{article.get('title','')} {article.get('summary','')} {article.get('source','')}"
+    )
+    return all(term in haystack for term in _normalize(query).split() if term)
+
+
 async def get_all_news(category: str = "all", search: str = "") -> list[dict]:
     sources = RSS_SOURCES["all"]
     if category != "all":
@@ -314,11 +328,7 @@ async def get_all_news(category: str = "all", search: str = "") -> list[dict]:
     all_articles = [a for feed in results for a in feed]
 
     if search:
-        query = search.lower()
-        all_articles = [
-            a for a in all_articles
-            if query in a["title"].lower() or query in a["summary"].lower()
-        ]
+        all_articles = [a for a in all_articles if _matches_search(a, search)]
 
     all_articles.sort(key=lambda x: x["date_ts"], reverse=True)
     return all_articles
