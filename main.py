@@ -4,6 +4,8 @@ import json
 import logging
 import os
 import secrets
+from dotenv import load_dotenv
+load_dotenv()
 import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor

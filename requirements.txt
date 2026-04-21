@@ -7,3 +7,4 @@ python-multipart==0.0.12
 beautifulsoup4==4.12.3
 deep-translator==1.11.4
 pywebpush==2.0.0
+python-dotenv==1.0.1
