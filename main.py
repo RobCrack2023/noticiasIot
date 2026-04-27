@@ -253,6 +253,24 @@ def _save_visits(count: int):
 
 _visit_count: int = _load_visits()
 
+REACTIONS_FILE = Path("reactions.json")
+_reactions: dict[str, dict] = {}
+
+def _load_reactions():
+    global _reactions
+    try:
+        _reactions = json.loads(REACTIONS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        _reactions = {}
+
+def _save_reactions():
+    try:
+        REACTIONS_FILE.write_text(json.dumps(_reactions, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        log.warning("Could not save reactions: %s", e)
+
+_load_reactions()
+
 
 def parse_date(entry) -> tuple[str, float]:
     for attr in ("published_parsed", "updated_parsed"):
@@ -366,6 +384,52 @@ async def index(request: Request):
 @app.get("/api/stats")
 async def api_stats():
     return JSONResponse({"visits": _visit_count})
+
+
+@app.get("/api/reactions")
+async def api_get_reactions(url: str = Query(...)):
+    data = _reactions.get(url, {})
+    return JSONResponse({"likes": data.get("likes", 0), "dislikes": data.get("dislikes", 0)})
+
+
+@app.post("/api/reactions/bulk")
+async def api_reactions_bulk(payload: dict):
+    urls: list[str] = payload.get("urls", [])[:50]
+    result = {}
+    for url in urls:
+        d = _reactions.get(url, {})
+        result[url] = {"likes": d.get("likes", 0), "dislikes": d.get("dislikes", 0)}
+    return JSONResponse(result)
+
+
+@app.post("/api/react")
+async def api_react(payload: dict):
+    url = (payload.get("url") or "").strip()
+    reaction = payload.get("reaction")
+    prev = payload.get("prev")
+
+    if not url:
+        return JSONResponse({"error": "url requerida"}, status_code=400)
+    if reaction not in ("like", "dislike", None):
+        return JSONResponse({"error": "reaction inválida"}, status_code=400)
+
+    if url not in _reactions:
+        _reactions[url] = {"likes": 0, "dislikes": 0}
+    data = _reactions[url]
+
+    if prev == "like":
+        data["likes"] = max(0, data.get("likes", 0) - 1)
+    elif prev == "dislike":
+        data["dislikes"] = max(0, data.get("dislikes", 0) - 1)
+
+    if reaction == "like":
+        data["likes"] = data.get("likes", 0) + 1
+    elif reaction == "dislike":
+        data["dislikes"] = data.get("dislikes", 0) + 1
+
+    _reactions[url] = data
+    _save_reactions()
+    return JSONResponse({"likes": data["likes"], "dislikes": data["dislikes"]})
 
 
 @app.get("/api/news")

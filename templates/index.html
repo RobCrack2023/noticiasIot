@@ -44,6 +44,8 @@
     #article-modal.hidden { display:none; }
     #modal-panel.entering { transform: scale(.96) translateY(8px); opacity:0; }
     .modal-summary p { margin-bottom: .75rem; line-height: 1.75; }
+    .reaction-btn.liked { color: #10b981; background: #ecfdf5; border-color: #a7f3d0; }
+    .reaction-btn.disliked { color: #ef4444; background: #fef2f2; border-color: #fca5a5; }
   </style>
 </head>
 <body class="font-sans min-h-screen text-slate-800">
@@ -259,8 +261,20 @@
       </div>
 
       <!-- Footer actions -->
-      <div class="shrink-0 px-6 py-3 bg-slate-50/80 flex items-center justify-between gap-3">
-        <p id="modal-trans-note" class="text-xs text-slate-400 hidden sm:block">Traducido automáticamente · Google Translate</p>
+      <div class="shrink-0 px-6 py-3 bg-slate-50/80 flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 hidden sm:block">¿Te gustó?</span>
+          <button id="modal-like-btn" onclick="react(_currentModalUrl,'like',event)"
+            class="reaction-btn like-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 text-slate-500">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
+            <span class="rcount">0</span>
+          </button>
+          <button id="modal-dislike-btn" onclick="react(_currentModalUrl,'dislike',event)"
+            class="reaction-btn dislike-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border border-slate-200 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-500 text-slate-500">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"/></svg>
+            <span class="rcount">0</span>
+          </button>
+        </div>
         <div class="flex gap-2 ml-auto">
           <button onclick="closeModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors">Cerrar</button>
           <a id="modal-link" href="#" target="_blank" rel="noopener"
@@ -344,7 +358,16 @@ function buildCard(a, i){
             <svg class="w-3 h-3 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <span class="text-xs text-slate-400">${a.date}</span>
           </div>
-          <span class="text-xs text-sky-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Ver resumen →</span>
+          <div class="flex items-center gap-0.5 reaction-bar" data-react-url="${a.link}">
+            <button onclick="react(currentArticles[${i}].link,'like',event)" class="reaction-btn like-btn flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-xs border border-transparent transition-all hover:bg-emerald-50 hover:text-emerald-500 hover:border-emerald-200 text-slate-400" title="Me gusta">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
+              <span class="rcount">0</span>
+            </button>
+            <button onclick="react(currentArticles[${i}].link,'dislike',event)" class="reaction-btn dislike-btn flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-xs border border-transparent transition-all hover:bg-red-50 hover:text-red-400 hover:border-red-200 text-slate-400" title="No me gusta">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"/></svg>
+              <span class="rcount">0</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -425,6 +448,7 @@ async function openModal(idx){
   document.getElementById('modal-date').textContent  = a.date;
   document.getElementById('modal-source').textContent = a.source;
   document.getElementById('modal-link').href = a.link;
+  _currentModalUrl = a.link;
   _setupShare(a);
 
   const badge = document.getElementById('modal-badge');
@@ -463,6 +487,16 @@ async function openModal(idx){
   requestAnimationFrame(() => {
     panel.classList.remove('entering');
   });
+
+  // Load reactions for this article
+  const _mCached = _reactionsCache[a.link];
+  _updateModalReactions(a.link, _mCached || {likes:0,dislikes:0}, _getUserReaction(a.link));
+  if (!_mCached) {
+    fetch(`/api/reactions?url=${encodeURIComponent(a.link)}`)
+      .then(r => r.json())
+      .then(d => { _reactionsCache[a.link] = d; _updateModalReactions(a.link, d, _getUserReaction(a.link)); })
+      .catch(() => {});
+  }
 
   // Fetch extended summary async
   if(_extendedAbort) _extendedAbort.abort();
@@ -616,6 +650,7 @@ async function loadNews(force=false){
     } else {
       renderGrid();
     }
+    loadBulkReactions(currentArticles.map(a => a.link)).then(() => _applyReactionsToCards());
     buildPagination(data.page, data.pages);
   } catch(e) {
     document.getElementById('skeleton-grid').innerHTML = '';
@@ -656,6 +691,69 @@ document.getElementById('search-input').addEventListener('input', e => {
 });
 
 setInterval(() => { if(state.page===1 && !state.search) loadNews(); }, 5*60*1000);
+
+// ── Reactions ──────────────────────────────────────────────────
+const _reactionsCache = {};
+let _currentModalUrl = '';
+
+function _reactKey(url) {
+  let h = 0;
+  for (let i = 0; i < url.length; i++) { h = Math.imul(31, h) + url.charCodeAt(i) | 0; }
+  return 'tp_r_' + Math.abs(h).toString(36);
+}
+function _getUserReaction(url) { return localStorage.getItem(_reactKey(url)); }
+function _setUserReaction(url, v) { v ? localStorage.setItem(_reactKey(url), v) : localStorage.removeItem(_reactKey(url)); }
+
+async function loadBulkReactions(urls) {
+  try {
+    const r = await fetch('/api/reactions/bulk', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ urls }),
+    });
+    const data = await r.json();
+    Object.assign(_reactionsCache, data);
+  } catch(e) {}
+}
+
+function _applyReactionsToCards() {
+  document.querySelectorAll('.reaction-bar[data-react-url]').forEach(bar => {
+    const url = bar.dataset.reactUrl;
+    const data = _reactionsCache[url] || {likes:0, dislikes:0};
+    const ur = _getUserReaction(url);
+    const lb = bar.querySelector('.like-btn');
+    const db = bar.querySelector('.dislike-btn');
+    if (lb) { lb.querySelector('.rcount').textContent = data.likes || 0; lb.classList.toggle('liked', ur === 'like'); }
+    if (db) { db.querySelector('.rcount').textContent = data.dislikes || 0; db.classList.toggle('disliked', ur === 'dislike'); }
+  });
+}
+
+function _updateModalReactions(url, data, userReaction) {
+  if (_currentModalUrl !== url) return;
+  const lb = document.getElementById('modal-like-btn');
+  const db = document.getElementById('modal-dislike-btn');
+  if (!lb) return;
+  lb.querySelector('.rcount').textContent = data.likes || 0;
+  db.querySelector('.rcount').textContent = data.dislikes || 0;
+  lb.classList.toggle('liked', userReaction === 'like');
+  db.classList.toggle('disliked', userReaction === 'dislike');
+}
+
+async function react(url, newReaction, event) {
+  if (event) event.stopPropagation();
+  const prev = _getUserReaction(url);
+  const reaction = prev === newReaction ? null : newReaction;
+  try {
+    const r = await fetch('/api/react', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ url, reaction, prev }),
+    });
+    const data = await r.json();
+    _reactionsCache[url] = data;
+    _setUserReaction(url, reaction);
+    _applyReactionsToCards();
+    _updateModalReactions(url, data, reaction);
+  } catch(e) {}
+}
 
 // ── Push Notifications ─────────────────────────────────────────
 let _swReg = null;
